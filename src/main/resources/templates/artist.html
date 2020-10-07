@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Artist</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+<div>
+    <div>
+        <h1 class="ui center aligned header">Artists</h1>
+    </div>
+    <div class="ui grid">
+        <div class="four wide column"></div>
+        <div class="eight wide column">
+        <table class="ui very compact table">
+            <thead>
+            <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Link</th>
+                <th>Followers</th>
+                <th>Top Tracks</th>
+                <th>Get All Tracks</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="artist : ${artistSpotifySearch.getArtists().getItems()}">
+                <td data-label="Image">
+                    <img th:if="${not artist.getImages().isEmpty()}" th:src="${artist.getImages()[1].getUrl()}"/>
+                    <span th:unless="${not artist.getImages().isEmpty()}" th:text="'No image'"></span>
+                </td>
+                <td data-label="Name" th:text="${artist.getName()}"></td>
+                <td data-label="Link"><a th:href="${artist.getUri()}">Link</a></td>
+                <td data-label="Followers" th:text="${artist.getFollowers().getTotal()}"></td>
+                <td data-label="Top Tracks">
+                    <form method="get" action="#"
+                          th:action="@{/top10/{id}(id=${artist.getId()})}">
+                        <input type="hidden" th:name="author" th:value="${artist.getName()}"/>
+                        <input type="submit" value="Get top 10 tracks"/>
+                    </form>
+                </td>
+                <td data-label="Get All Tracks">
+                    <form method="get" action="#"
+                          th:action="@{/all-tracks/{id}(id=${artist.getId()})}">
+                        <input type="submit" value="Get All Tracks"/>
+                        <input type="hidden" th:name="author" th:value="${artist.getName()}"/>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="four wide column"></div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Track</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+<div>
+    <h1 class="ui center aligned header" th:text="'Top 10 Tracks of: '+ ${authorName}"></h1>
+    <div class="ui grid">
+        <div class="four wide column"></div>
+        <div class="eight wide column">
+        <table class="ui very compact table">
+            <thead>
+            <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Link</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="track : ${topTenTracks}">
+                <td data-label="Image">
+                    <img th:if="${not track.getAlbum().getImages().isEmpty()}"
+                         th:src="${track.getAlbum().getImages()[1].getUrl()}"/>
+                    <span th:unless="${not track.getAlbum().getImages().isEmpty()}" th:text="'No image'"></span>
+                </td>
+                <td data-label="Name" th:text="${track.getName()}"></td>
+                <td data-label="Link"><a th:href="${track.getUri()}">Link</a></td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="four wide column"></div>
+    </div>
+</div>
+</body>
+</html>

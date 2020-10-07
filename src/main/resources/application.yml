@@ -1,0 +1,11 @@
+security:
+  oauth2:
+    client:
+      clientId: <myId>
+      clientSecret: <mySecret>
+      accessTokenUri: https://accounts.spotify.com/api/token
+      userAuthorizationUri: https://accounts.spotify.com/authorize
+    resource:
+      userInfoUri: https://api.spotify.com/v1/me
+    sso:
+      loginpath: /home
