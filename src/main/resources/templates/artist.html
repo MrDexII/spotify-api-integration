@@ -28,7 +28,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="artist : ${artistSpotifySearch.getArtists().getItems()}">
+            <tr th:each="artist : ${artistSpotifySearch}">
                 <td data-label="Image">
                     <img th:if="${not artist.getImages().isEmpty()}" th:src="${artist.getImages()[1].getUrl()}"/>
                     <span th:unless="${not artist.getImages().isEmpty()}" th:text="'No image'"></span>
