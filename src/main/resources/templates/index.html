@@ -29,6 +29,12 @@
             <span style="font-weight:bold" th:text="${userAttribute.key}"></span>: <span th:text="${userAttribute.value}"></span>
         </li>
     </ul>
+
+    <form method="get" action="#"
+          th:action=@{/artist{name}(name=${artName})}>
+        <input type="submit" value="Search"/>
+        <input type="text" th:value="${artName}" th:name="artName"/>
+    </form>
 </div>
 </body>
 </html>

@@ -1,6 +1,5 @@
 package com.andrzej.spotifyapi.controller;
 
-import com.andrzej.spotifyapi.model.Item;
 import com.andrzej.spotifyapi.service.HomeService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.net.URISyntaxException;
-import java.util.List;
 
 @Controller
 public class HomeController {
@@ -34,11 +32,11 @@ public class HomeController {
         return "index";
     }
 
-    @GetMapping(value = "/artist/{name}")
-    public String artist(@PathVariable("name") String name,
+    @GetMapping(value = "/artist")
+    public String artist(@RequestParam String artName,
                          @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
                          Model model) throws URISyntaxException {
-        model.addAttribute("artistSpotifySearch", homeService.getArtists(name, authorizedClient));
+        model.addAttribute("artistSpotifySearch", homeService.getArtists(artName, authorizedClient));
         return "artist";
     }
 
