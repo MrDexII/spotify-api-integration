@@ -1,36 +1,38 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity5">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity5">
 <head>
     <title>Spring Security - OAuth 2.0 Login</title>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div style="float: right" th:fragment="logout" sec:authorize="isAuthenticated()">
-    <div style="float:left">
-        <span style="font-weight:bold">User: </span><span sec:authentication="name"></span>
+<div class="container">
+    <div style="float: right" th:fragment="logout" sec:authorize="isAuthenticated()">
+        <div style="float:left">
+            <span style="font-weight:bold">User: </span><span th:text="${userName}"></span>
+        </div>
+        <div style="float:none">&nbsp;</div>
+        <div style="float:right">
+            <form action="#" th:action="@{/logout}" method="post">
+                <input type="submit" value="Logout"/>
+            </form>
+        </div>
     </div>
-    <div style="float:none">&nbsp;</div>
-    <div style="float:right">
-        <form action="#" th:action="@{/logout}" method="post">
-            <input type="submit" value="Logout" />
-        </form>
+    <h1>OAuth 2.0 Login with Spring Security</h1>
+    <div class="helloBanner">
+        <p>
+            You are successfully logged in <span style="font-weight:bold" th:text="${userName}"></span>
+            via the OAuth 2.0 Client <span style="font-weight:bold" th:text="${clientName}"></span>
+        </p>
+        <p>
+            In this website you can search for your favorite spotify artist and see his all tracks.
+        </p>
     </div>
 </div>
-<h1>OAuth 2.0 Login with Spring Security</h1>
-<div>
-    You are successfully logged in <span style="font-weight:bold" th:text="${userName}"></span>
-    via the OAuth 2.0 Client <span style="font-weight:bold" th:text="${clientName}"></span>
-</div>
-<div>&nbsp;</div>
-<div>
-    <span style="font-weight:bold">User Attributes:</span>
-    <ul>
-        <li th:each="userAttribute : ${userAttributes}">
-            <span style="font-weight:bold" th:text="${userAttribute.key}"></span>: <span th:text="${userAttribute.value}"></span>
-        </li>
-    </ul>
-
-    <form method="get" action="#"
+<div class="formContainer">
+    <h1>Search for artist</h1>
+    <form class="searchArtistForm" method="get" action="#"
           th:action=@{/artist{name}(name=${artName})}>
         <input type="submit" value="Search"/>
         <input type="text" th:value="${artName}" th:name="artName"/>
