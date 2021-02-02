@@ -14,28 +14,26 @@
     <div>
         <h1 class="ui center aligned header" th:text="${artistName}"></h1>
     </div>
-    <div class="ui grid">
-        <div class="four wide column"></div>
-        <div class="eight wide column">
-            <table class="ui very compact table">
-                <thead>
-                <tr>
-                    <th>Number</th>
-                    <th th:text="'All tracks from ' + ${artistName}"></th>
-                    <th>URL</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="track,iter : ${allTracks} ">
-                    <td th:text="${iter.count}"></td>
-                    <td th:text="${track.getName()}"></td>
-                    <td><a th:text="${track.getExternalUrls().getSpotify()}" th:href="${track.getExternalUrls().getSpotify()}"></a></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="four wide column"></div>
+    <div class="tableContainer">
+        <table class="ui very compact table">
+            <thead>
+            <tr>
+                <th>Number</th>
+                <th th:text="'All tracks from ' + ${artistName}"></th>
+                <th>URL</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="track,iter : ${allTracks} ">
+                <td th:text="${iter.count}"></td>
+                <td th:text="${track.getName()}"></td>
+                <td><a th:text="${track.getExternalUrls().getSpotify()}"
+                       th:href="${track.getExternalUrls().getSpotify()}"></a></td>
+            </tr>
+            </tbody>
+        </table>
     </div>
+</div>
 </div>
 </body>
 </html>
