@@ -18,6 +18,7 @@ import java.net.URISyntaxException;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -80,16 +81,30 @@ public class HomeService {
     }
 
     private SpotifySearchForItems wrapperForWaitForResults(URI uri, OAuth2AuthorizedClient authorizedClient) throws InterruptedException {
-        SpotifySearchForItems tracks;
-        try {
-            tracks = createResponseEntity(uri, authorizedClient, SpotifySearchForItems.class);
-        } catch (HttpClientErrorException.TooManyRequests e) {
-            HttpHeaders responseHeaders = e.getResponseHeaders();
-            long secondsToWait = Long.parseLong(responseHeaders.getFirst("Retry-After"));
-            Thread.sleep(secondsToWait * 1000 + 600);
-            tracks = createResponseEntity(uri, authorizedClient, SpotifySearchForItems.class);
-            logger.info("Trzeba bylo czekac " + (secondsToWait + 0.6) + "s");
+        SpotifySearchForItems tracks = new SpotifySearchForItems();
+        long secondsToWait;
+
+        do {
+            try {
+                secondsToWait = 0L;
+                tracks = createResponseEntity(uri, authorizedClient, SpotifySearchForItems.class);
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                e.printStackTrace();
+                HttpHeaders responseHeaders = e.getResponseHeaders();
+                if (responseHeaders == null) {
+                    return tracks;
+                }
+                final String waitTime = Objects.requireNonNull(responseHeaders.getFirst("Retry-After"));
+                //I thing Spotify API is rounding wait time to lowe values,
+                //so waiting time is higher, that's "+600"
+                secondsToWait = Long.parseLong(waitTime);
+                Thread.sleep(secondsToWait * 1000 + 600);
+                logger.warn("To many request to API");
+                logger.warn("Wait time: " + (secondsToWait + 0.6) + "s");
+            }
         }
+        while (secondsToWait != 0);
+
         return tracks;
     }
 
@@ -97,7 +112,7 @@ public class HomeService {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", getToken(authorizedClient));
-        HttpEntity httpEntity = new HttpEntity(headers);
+        HttpEntity<HttpHeaders> httpEntity = new HttpEntity<>(headers);
 
         ResponseEntity<T> exchange = restTemplate.exchange(uri,
                 HttpMethod.GET,
