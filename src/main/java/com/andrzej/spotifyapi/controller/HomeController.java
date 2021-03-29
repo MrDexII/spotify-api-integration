@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.net.URISyntaxException;
+import java.util.concurrent.ExecutionException;
 
 @Controller
 public class HomeController {
@@ -53,7 +54,7 @@ public class HomeController {
     public String getAllTracks(@PathVariable("id") String id,
                                @RequestParam("author") String authorName,
                                @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-                               Model model) throws URISyntaxException, InterruptedException {
+                               Model model) throws URISyntaxException, InterruptedException, ExecutionException {
         model.addAttribute("allTracks", homeService.getListOfAllTracks(id, authorizedClient));
         model.addAttribute("artistName", authorName);
         return "all-tracks";

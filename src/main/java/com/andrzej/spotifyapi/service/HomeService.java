@@ -16,9 +16,9 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,37 +47,78 @@ public class HomeService {
         return trackObject.getTracks();
     }
 
-    public List<Item> getListOfAllTracks(String id, OAuth2AuthorizedClient authorizedClient) throws URISyntaxException, InterruptedException {
-        int limit = 50;
+    public List<Item> getListOfAllTracks(String id, OAuth2AuthorizedClient authorizedClient) {
+        final ExecutorService executorService = Executors.newFixedThreadPool(100);
 
-        //getting all albums from artist
-        URI uri = new URI("https://api.spotify.com/v1/artists/" + id + "/albums?market=PL&limit=" + limit + "&offset=0");
-        SpotifySearchForItems tracks;
-        tracks = wrapperForWaitForResults(uri, authorizedClient);
+        BlockingQueue<String> allAlbumsIDs = new LinkedBlockingQueue<>();
 
-        List<String> listOfAlbumsIds = tracks.getItems().stream().map(Item::getId).collect(Collectors.toList());
+        Runnable getAllAlbumsFromArtist = () -> {
+            int limit = 50;
+            URI uri = null;
+            SpotifySearchForItems result = null;
 
-        while (tracks.getAdditionalProperties().get("next") != null) {
-            uri = new URI((String) tracks.getAdditionalProperties().get("next"));
-            tracks = wrapperForWaitForResults(uri, authorizedClient);
-            listOfAlbumsIds.addAll(tracks.getItems().stream().map(Item::getId).collect(Collectors.toList()));
+            do {
+                if (result == null) {
+                    try {
+                        uri = new URI("https://api.spotify.com/v1/artists/" + id + "/albums?market=PL&limit=" + limit + "&offset=0");
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    try {
+                        uri = new URI((String) result.getAdditionalProperties().get("next"));
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                try {
+                    result = wrapperForWaitForResults(uri, authorizedClient);
+                    result.getItems().stream().map(Item::getId).forEach(item -> {
+                        try {
+                            allAlbumsIDs.put(item);
+                            //System.out.println("Dodałem: "+ Thread.currentThread().getName());
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } while (Objects.requireNonNull(result).getAdditionalProperties().get("next") != null);
+        };
+
+        Callable<List<Item>> getAllTracksFromAlbums = () -> {
+            URI uri;
+            SpotifySearchForItems result = null;
+            final CopyOnWriteArrayList<Item> allTracks = new CopyOnWriteArrayList<>();
+
+            do {
+                final String albumId = allAlbumsIDs.poll(10, TimeUnit.SECONDS);
+                //if (result == null) {
+                uri = new URI("https://api.spotify.com/v1/albums/" + albumId + "/tracks");
+//                } else {
+//                    uri = new URI((String) result.getAdditionalProperties().get("next"));
+//                }
+                result = wrapperForWaitForResults(uri, authorizedClient);
+                allTracks.addAll(result.getItems());
+                //System.out.println("Odebrałem: " + Thread.currentThread().getName());
+            } while (allAlbumsIDs.size() != 0);
+
+            return allTracks;
+        };
+
+        executorService.execute(getAllAlbumsFromArtist);
+        final Future<List<Item>> listOfAllTracks = executorService.submit(getAllTracksFromAlbums);
+
+        executorService.shutdown();
+
+        try {
+            return listOfAllTracks.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
-
-        //getting all tracks from albums
-        List<Item> listOfAllTracks = new LinkedList<>();
-
-        for (String albumId : listOfAlbumsIds) {
-            uri = new URI("https://api.spotify.com/v1/albums/" + albumId + "/tracks");
-            tracks = wrapperForWaitForResults(uri, authorizedClient);
-            listOfAllTracks.addAll(tracks.getItems());
-
-            while ((String) tracks.getAdditionalProperties().get("next") != null) {
-                uri = new URI((String) tracks.getAdditionalProperties().get("next"));
-                tracks = wrapperForWaitForResults(uri, authorizedClient);
-                listOfAllTracks.addAll(tracks.getItems());
-            }
-        }
-        return listOfAllTracks;
+        return null;
     }
 
     private SpotifySearchForItems wrapperForWaitForResults(URI uri, OAuth2AuthorizedClient authorizedClient) throws InterruptedException {
