@@ -10,19 +10,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.andrzej.spotifyapi.service.Utils.wrapperForWaitForResults;
 
-public class MyCallable implements Callable<CopyOnWriteArrayList<Item>> {
+public class AlbumTracksCallable implements Callable<CopyOnWriteArrayList<Item>> {
 
     private final String albumId;
     private final OAuth2AuthorizedClient authorizedClient;
 
-    public MyCallable(String albumId, OAuth2AuthorizedClient authorizedClient) {
+    public AlbumTracksCallable(String albumId, OAuth2AuthorizedClient authorizedClient) {
         this.albumId = albumId;
         this.authorizedClient = authorizedClient;
     }
 
     @Override
     public CopyOnWriteArrayList<Item> call() throws Exception {
-//        System.out.println(albumId + Thread.currentThread().getName());
         URI uri;
         SpotifySearchForItems result = null;
         uri = new URI("https://api.spotify.com/v1/albums/" + albumId + "/tracks");

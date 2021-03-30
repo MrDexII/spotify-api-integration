@@ -4,8 +4,8 @@ spring:
       client:
         registration:
           spotify:
-            client-id: cd80a20a4fe2482bab62e58d26e9e5f0
-            client-secret: 1d9f2b4ec2a54613ac226c01ee92080b
+            client-id: --
+            client-secret: --
             authorization-grant-type: authorization_code
             redirect-uri: http://localhost:8080/login/oauth2/code/spotify
         provider:

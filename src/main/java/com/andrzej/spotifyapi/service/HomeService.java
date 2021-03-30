@@ -42,9 +42,9 @@ public class HomeService {
     }
 
     public Set<Item> getListOfAllTracks(String id, OAuth2AuthorizedClient authorizedClient) {
-
         BlockingQueue<Runnable> allAlbumsIDsRunnable = new LinkedBlockingQueue<>(50);
         BlockingQueue<String> allAlbumsIDs = new LinkedBlockingQueue<>();
+        Set<Item> resultSet = new CopyOnWriteArraySet<>();
 
         CustomExecutorService executorService = new CustomExecutorService(5, 10, 10, TimeUnit.SECONDS, allAlbumsIDsRunnable);
 
@@ -66,7 +66,9 @@ public class HomeService {
             do {
                 if (result == null) {
                     try {
-                        uri = new URI("https://api.spotify.com/v1/artists/" + id + "/albums?market=PL&limit=" + limit + "&offset=0");
+                        uri = new URI("https://api.spotify.com/v1/artists/" +
+                                id +
+                                "/albums?market=PL&limit=" + limit + "&offset=0");
                     } catch (URISyntaxException e) {
                         e.printStackTrace();
                     }
@@ -83,7 +85,6 @@ public class HomeService {
                     result.getItems().stream().map(Item::getId).forEach(item -> {
                         try {
                             allAlbumsIDs.put(item);
-                            //System.out.println("Dodałem: "+ Thread.currentThread().getName());
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -94,112 +95,21 @@ public class HomeService {
             } while (Objects.requireNonNull(result).getAdditionalProperties().get("next") != null);
         };
 
-        Callable<List<Item>> getAllTracksFromAlbums = () -> {
-            URI uri;
-            SpotifySearchForItems result = null;
-            final CopyOnWriteArrayList<Item> allTracks = new CopyOnWriteArrayList<>();
-
-            do {
-                final String albumId = allAlbumsIDs.poll(10, TimeUnit.SECONDS);
-                //if (result == null) {
-                uri = new URI("https://api.spotify.com/v1/albums/" + albumId + "/tracks");
-//                } else {
-//                    uri = new URI((String) result.getAdditionalProperties().get("next"));
-//                }
-                result = wrapperForWaitForResults(uri, authorizedClient);
-                allTracks.addAll(result.getItems());
-                //System.out.println("Odebrałem: " + Thread.currentThread().getName());
-            } while (allAlbumsIDs.size() != 0);
-
-            return allTracks;
-        };
-
-//        Callable<CopyOnWriteArrayList<Item>> start = () -> {
-//            CopyOnWriteArrayList<Item> listOfAllTracks = null;
-//            do {
-//                try {
-//                    final String albumId = allAlbumsIDs.poll(1, TimeUnit.SECONDS);
-//                    if (albumId == null) break;
-//                    System.out.println(albumId);
-//                    final Future<CopyOnWriteArrayList<Item>> listOfFutureTracks = executorService.submit(new MyCallable(albumId, authorizedClient));
-//                    System.out.println(listOfFutureTracks);
-//                    listOfAllTracks.addAll(listOfFutureTracks.get());
-//                } catch (InterruptedException | ExecutionException e) {
-//                    e.printStackTrace();
-//                }
-//            } while (allAlbumsIDs.size() != 0);
-//            return listOfAllTracks;
-//        };
-
-        //executorService.prestartAllCoreThreads();
-
         executorService.prestartAllCoreThreads();
-
         executorService.execute(getAllAlbumsFromArtist);
-
-        Set<Item> finalList = new CopyOnWriteArraySet<>();
 
         do {
             try {
                 final String albumId = allAlbumsIDs.poll(1, TimeUnit.SECONDS);
-                //System.out.println(allAlbumsIDs.size());
-//                System.out.println(albumId);
                 if (albumId == null) break;
-                final Future<CopyOnWriteArrayList<Item>> futureListOfAllTracks = executorService.submit(new MyCallable(albumId, authorizedClient));
-//                System.out.println(futureListOfAllTracks);
-                finalList.addAll(futureListOfAllTracks.get());
+                final Future<CopyOnWriteArrayList<Item>> futureListOfAllTracks = executorService.submit(new AlbumTracksCallable(albumId, authorizedClient));
+                resultSet.addAll(futureListOfAllTracks.get());
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
         } while (true);
-        //final Future<CopyOnWriteArrayList<Item>> futureListOfAllTracks = executorService.submit(start);
+        
         executorService.shutdown();
-        return finalList;
+        return resultSet;
     }
-
-//    private SpotifySearchForItems wrapperForWaitForResults(URI uri, OAuth2AuthorizedClient authorizedClient) throws InterruptedException {
-//        SpotifySearchForItems tracks = new SpotifySearchForItems();
-//        long secondsToWait;
-//
-//        do {
-//            try {
-//                secondsToWait = 0L;
-//                tracks = createResponseEntity(uri, authorizedClient, SpotifySearchForItems.class);
-//            } catch (HttpClientErrorException.TooManyRequests e) {
-//                e.printStackTrace();
-//                HttpHeaders responseHeaders = e.getResponseHeaders();
-//                if (responseHeaders == null) {
-//                    return tracks;
-//                }
-//                final String waitTime = Objects.requireNonNull(responseHeaders.getFirst("Retry-After"));
-//                //I thing Spotify API is rounding wait time to lowe values,
-//                //so waiting time is higher, that's "+600"
-//                secondsToWait = Long.parseLong(waitTime);
-//                Thread.sleep(secondsToWait * 1000 + 600);
-//                logger.warn("To many request to API");
-//                logger.warn("Wait time: " + (secondsToWait + 0.6) + "s");
-//            }
-//        }
-//        while (secondsToWait != 0);
-//
-//        return tracks;
-//    }
-//
-//    private <T> T createResponseEntity(URI uri, OAuth2AuthorizedClient authorizedClient, Class<T> trackSpotifySearchClass) {
-//        RestTemplate restTemplate = new RestTemplate();
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.add("Authorization", getToken(authorizedClient));
-//        HttpEntity<HttpHeaders> httpEntity = new HttpEntity<>(headers);
-//
-//        ResponseEntity<T> exchange = restTemplate.exchange(uri,
-//                HttpMethod.GET,
-//                httpEntity,
-//                trackSpotifySearchClass);
-//        return exchange.getBody();
-//    }
-//
-//    private String getToken(OAuth2AuthorizedClient authorizedClient) {
-//        OAuth2AccessToken accessToken = authorizedClient.getAccessToken();
-//        return String.format("%s %s", accessToken.getTokenType().getValue(), accessToken.getTokenValue());
-//    }
 }
